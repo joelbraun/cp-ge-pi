@@ -1,4 +1,4 @@
-all: detect-parking
-	g++ -Wall -g -std=c++11 -stdlib=libc++ `pkg-config --cflags --libs opencv` -l restclient-cpp ./*.cpp -o ./detect-parking
+all:
+	g++ -Wall -g -std=c++11 `pkg-config --cflags opencv` ./*.cpp `pkg-config --libs opencv` -l restclient-cpp -lcurl  -o ./detect-parking
 clean:
 	rm -rf *.o

@@ -10,50 +10,9 @@
 #include "ConfigLoad.h"
 #include "restclient-cpp/connection.h"
 #include "restclient-cpp/restclient.h"
+#include "RestActions.h"
 
 using namespace std;
-
-RestClient::Connection* getRestClient() {
-	RestClient::init();
-	
-	RestClient::Connection* conn = new RestClient::Connection("https://cp-parking-process-api.run.aws-usw02-pr.ice.predix.io");
-	RestClient::HeaderFields headers;
-	headers["Content-Type"] = "application/json";
-	conn->SetHeaders(headers);
-
-	return conn;
-}
-
-void postRequest(RestClient::Connection* conn, map<int, bool> data) 
-{
-	string postData = "{";
-		postData += "\"ParkingLotId\": \"ParkingLot1\",";
-		postData += "\"Timestamp\": \"";
-		char time_buf[21];
-		time_t now;
-		time(&now);
-	    strftime(time_buf, 21, "%Y-%m-%dT%H:%S:%MZ", localtime(&now));
-		postData += time_buf;
-		postData += "\",";
-		postData += "\"ParkingSpots\":["; 
-	for (int i = 0; i < data.size(); i++)
-	{
-		postData += "{";
-		postData += "\"id\":";
-		postData += to_string(i);
-		postData += ", \"status\": ";
-		postData += data[i] ? "true" : "false";
-		postData += "}";
-		if (i + 1 != data.size())
-			postData += ",";
-	}
-	postData += "]}";
-
-	cout << postData << endl;
-
-	RestClient::Response r = conn->post("/api/processing", postData);
-	cout << r.code << endl;
-}
 
 int main(int argc, char** argv)
 {
@@ -70,7 +29,7 @@ int main(int argc, char** argv)
     
 	const string videoFilename = argv[1];	
 	vector<Parking>  parking_data = parse_parking_file(argv[2]);
-	
+
 	// Open Camera or Video	File
 	cv::VideoCapture cap;
 	if (videoFilename == "0" || videoFilename == "1" || videoFilename == "2")
@@ -88,17 +47,6 @@ int main(int argc, char** argv)
 		cout << "Could not open: " << videoFilename << endl;
 		return -1;
 	}
-	cv::Size videoSize = cv::Size((int)cap.get(cv::CAP_PROP_FRAME_WIDTH),    // Acquire input size
-		(int)cap.get(cv::CAP_PROP_FRAME_HEIGHT));
-
-	cv::VideoWriter outputVideo;
-    if (ConfigLoad::options["SAVE_VIDEO"] == "true")
-	{		
-		string::size_type pAt = videoFilename.find_last_of('.');                  // Find extension point
-		const string videoOutFilename = videoFilename.substr(0, pAt) + "_out.avi";   // Form the new name with container		
-		//cv::VideoWriter::CV_FOURCC('C', 'R', 'A', 'M');
-		outputVideo.open(videoOutFilename, -1, cap.get(cv::CAP_PROP_FPS), videoSize, true);
-	}
 
 	// Initiliaze variables
 	cv::Mat frame, frame_blur, frame_gray, frame_out, roi, laplacian;
@@ -107,7 +55,8 @@ int main(int argc, char** argv)
 	cv::Size blur_kernel = cv::Size(5, 5); 	
 
 	unsigned int frameCt = 0;
-	RestClient::Connection* conn = getRestClient();
+	RestActions* restActions = new RestActions();
+	RestClient::Connection* conn = restActions->getRestClient();
 	// Loop through Video
 	while (cap.isOpened())
 	{
@@ -137,7 +86,8 @@ int main(int argc, char** argv)
 
 			}
 			if (frameCt % atoi(ConfigLoad::options["SAMPLE_RATE"].c_str()) == 0) {
-				postRequest(conn, pStatus);
+				RestClient::Response response = restActions->postRequest(conn, pStatus);
+				cout << "Configuration received: " << restActions->receiveConfiguration(response, &parking_data) << endl;
 			}
 			frameCt++;
 			if (frameCt == UINT_MAX){
@@ -145,13 +95,8 @@ int main(int argc, char** argv)
 			}
 		}
 
-		// Save Video
-		if (ConfigLoad::options["SAVE_VIDEO"] == "true")
-		{
-			outputVideo.write(frame_out);
-		}
 	}
-	RestClient::disable();
+	
 	return 0;
 }
 

@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "cctype": "cpp",
+        "locale": "cpp",
+        "functional": "cpp",
+        "ostream": "cpp",
+        "*.tcc": "cpp",
+        "system_error": "cpp"
+    }
+}
