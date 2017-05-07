@@ -57,17 +57,17 @@ int main(int argc, char** argv)
 	unsigned int frameCt = 0;
 	RestActions* restActions = new RestActions();
 	RestClient::Connection* conn = restActions->getRestClient();
+	raspicam::RaspiCam Camera;
 	// Loop through Video
-	while (cap.isOpened())
+	while (true)
 	{
-		cap.read(frame);
-		if (frame.empty())
-		{
-			printf("Error reading frame\n");
-			return -1;
+		if (!Camera.open()) {
+			cerr << "Error opening camera. Terminating..." << endl;
+			return 1;
 		}
-		
-		frame_out = frame.clone();
+		Camera.set(CV_CAP_PROP_FORMAT, CV_8UC1);
+		Camera.retrieve(frame);
+
 		cv::cvtColor(frame, frame_gray, cv::COLOR_BGR2GRAY);
 		cv::GaussianBlur(frame_gray, frame_blur, blur_kernel, 3, 3);
 		
