@@ -11,6 +11,7 @@
 #include "restclient-cpp/connection.h"
 #include "restclient-cpp/restclient.h"
 #include "RestActions.h"
+#include <raspicam/raspicam_cv.h>
 
 using namespace std;
 
@@ -24,30 +25,30 @@ int main(int argc, char** argv)
 		return -1;
 	}
     
-    //Load configs
-    ConfigLoad::parse();
+        //Load configs
+        ConfigLoad::parse();
     
 	const string videoFilename = argv[1];	
 	vector<Parking>  parking_data = parse_parking_file(argv[2]);
 
 	// Open Camera or Video	File
-	cv::VideoCapture cap;
-	if (videoFilename == "0" || videoFilename == "1" || videoFilename == "2")
-	{
-		printf("Loading Connected Camera...\n");
-		cap.open(stoi(videoFilename));
-		cv::waitKey(500);
-	}
-	else 
-	{
-		cap.open(videoFilename);
-	}	
-	if (!cap.isOpened())
-	{
-		cout << "Could not open: " << videoFilename << endl;
-		return -1;
-	}
-
+	//cv::VideoCapture cap;
+	//if (videoFilename == "0" || videoFilename == "1" || videoFilename == "2")
+	//{
+	//	printf("Loading Connected Camera...\n");
+	//	cap.open(stoi(videoFilename));
+	//	cv::waitKey(500);
+	//}
+	//else 
+	//{
+	//	cap.open(videoFilename);
+	//}	
+	//if (!cap.isOpened())
+	//{
+	//	cout << "Could not open: " << videoFilename << endl;
+	//	return -1;
+	//}
+        cout << "51" << endl;
 	// Initiliaze variables
 	cv::Mat frame, frame_blur, frame_gray, frame_out, roi, laplacian;
 	cv::Scalar delta, color;
@@ -57,17 +58,19 @@ int main(int argc, char** argv)
 	unsigned int frameCt = 0;
 	RestActions* restActions = new RestActions();
 	RestClient::Connection* conn = restActions->getRestClient();
-	raspicam::RaspiCam Camera;
+	raspicam::RaspiCam_Cv Camera;
+        Camera.set(CV_CAP_PROP_FORMAT, CV_8UC1);
+        cout << "Now here" << endl;
+        if (!Camera.open()) {
+           cerr << "Error opening camera. Terminating..." << endl;
+           return 1;
+        }
 	// Loop through Video
 	while (true)
 	{
-		if (!Camera.open()) {
-			cerr << "Error opening camera. Terminating..." << endl;
-			return 1;
-		}
-		Camera.set(CV_CAP_PROP_FORMAT, CV_8UC1);
+                cout << Camera.grab() << endl;
 		Camera.retrieve(frame);
-
+                cout << "73" << endl;
 		cv::cvtColor(frame, frame_gray, cv::COLOR_BGR2GRAY);
 		cv::GaussianBlur(frame_gray, frame_blur, blur_kernel, 3, 3);
 		
