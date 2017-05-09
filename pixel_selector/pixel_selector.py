@@ -30,6 +30,7 @@ class Clicker(PyMouseEvent):
         else:  # Exit if any other mouse button used
             self.stop()
 
-C = Clicker(int(sys.argv[1]))
+#C = Clicker(int(sys.argv[1]))
+C = Clicker(2)
 C.run()
 
