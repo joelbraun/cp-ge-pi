@@ -73,7 +73,12 @@ int main(int argc, char** argv)
                 cout << "73" << endl;
 		cv::cvtColor(frame, frame_gray, cv::COLOR_BGR2GRAY);
 		cv::GaussianBlur(frame_gray, frame_blur, blur_kernel, 3, 3);
-		
+		Point2f src_center(frame.cols / 2.0F, frame.rows / 2.0F);
+        Mat rot_mat = getRotationMatrix2D(src_center, 90, 1.0);
+        Mat dst;
+        warpAffine(frame, frame, rot_mat, frame.size());
+        
+        
 		if (ConfigLoad::options["DETECT_PARKING"] == "true")
 		{
 			map<int, bool> pStatus;
