@@ -48,7 +48,7 @@ int main(int argc, char** argv)
 	//	cout << "Could not open: " << videoFilename << endl;
 	//	return -1;
 	//}
-        cout << "51" << endl;
+
 	// Initiliaze variables
 	cv::Mat frame, frame_blur, frame_gray, frame_out, roi, laplacian;
 	cv::Scalar delta, color;
@@ -60,7 +60,6 @@ int main(int argc, char** argv)
 	RestClient::Connection* conn = restActions->getRestClient();
 	raspicam::RaspiCam_Cv Camera;
         Camera.set(CV_CAP_PROP_FORMAT, CV_8UC1);
-        cout << "Now here" << endl;
         if (!Camera.open()) {
            cerr << "Error opening camera. Terminating..." << endl;
            return 1;
@@ -70,15 +69,14 @@ int main(int argc, char** argv)
 	{
                 cout << Camera.grab() << endl;
 		Camera.retrieve(frame);
-                cout << "73" << endl;
-		cv::cvtColor(frame, frame_gray, cv::COLOR_BGR2GRAY);
-		cv::GaussianBlur(frame_gray, frame_blur, blur_kernel, 3, 3);
-		Point2f src_center(frame.cols / 2.0F, frame.rows / 2.0F);
-        Mat rot_mat = getRotationMatrix2D(src_center, 90, 1.0);
-        Mat dst;
-        warpAffine(frame, frame, rot_mat, frame.size());
-        
-        
+		cv::Point2f src_center(frame.cols / 2.0F, frame.rows / 2.0F);
+                cv::Mat rot_mat = cv::getRotationMatrix2D(src_center, 90, 1.0);
+                cv::warpAffine(frame, frame, rot_mat, frame.size());
+                
+                string fname = "test" + to_string(frameCt) + ".jpg";
+                cv::imwrite(fname, frame);
+ 
+                cv::GaussianBlur(frame, frame_blur, blur_kernel, 3, 3);
 		if (ConfigLoad::options["DETECT_PARKING"] == "true")
 		{
 			map<int, bool> pStatus;
