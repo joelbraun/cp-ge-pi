@@ -39,7 +39,7 @@ if __name__ == "__main__":
     frame.pack(fill=BOTH,expand=1)
 
     #adding the image
-    File = askopenfilename(parent=root, initialdir="C:/",title='Choose an image.')
+    File = askopenfilename(parent=root, initialdir="/",title='Choose an image.')
     img = ImageTk.PhotoImage(Image.open(File))
     canvas.create_image(0,0,image=img,anchor="nw")
     canvas.config(scrollregion=canvas.bbox(ALL))
