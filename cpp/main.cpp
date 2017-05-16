@@ -75,7 +75,11 @@ int main(int argc, char** argv)
                 
                 string fname = "test" + to_string(frameCt) + ".jpg";
                 cv::imwrite(fname, frame);
- 
+                
+                if (fork() == 0) {
+                   exec("python /home/pi/cp-ge-pi/cpp/sendimage.py");
+                   return 0;
+                }
                 cv::GaussianBlur(frame, frame_blur, blur_kernel, 3, 3);
 		if (ConfigLoad::options["DETECT_PARKING"] == "true")
 		{

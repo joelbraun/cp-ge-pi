@@ -15,6 +15,7 @@
 #include "restclient-cpp/connection.h"
 #include "restclient-cpp/restclient.h"
 #include "json.hpp"
+#include "ConfigLoad.h"
 
 using namespace std;
 using json = nlohmann::json;
@@ -38,6 +39,7 @@ RestClient::Response RestActions::postRequest(RestClient::Connection* conn, map<
 {
 	string postData = "{";
 		postData += "\"ParkingLotId\": \"ParkingLot1\",";
+        postData += "\"SensorId\": 
 		postData += "\"Timestamp\": \"";
 		char time_buf[21];
 		time_t now;
