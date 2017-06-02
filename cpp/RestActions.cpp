@@ -16,6 +16,7 @@
 #include "restclient-cpp/restclient.h"
 #include "json.hpp"
 #include "ConfigLoad.h"
+#include "base64.h"
 
 using namespace std;
 using json = nlohmann::json;
@@ -25,7 +26,7 @@ using json = nlohmann::json;
  */
 RestActions::RestActions() {
     RestClient::init();
-    conn = new RestClient::Connection("https://cp-parking-process-api.run.aws-usw02-pr.ice.predix.io");
+    conn = new RestClient::Connection("http://process.parkix.io");
 	RestClient::HeaderFields headers;
 	headers["Content-Type"] = "application/json";
 	conn->SetHeaders(headers);
@@ -35,11 +36,33 @@ RestClient::Connection* RestActions::getRestClient() {
 	return conn;
 }
 
+void RestActions::getOAuthToken()
+{
+    string url = "https://a7cc7c64-503e-43df-ab3a-18c97ef60505.predix-uaa.run.aws-usw02-pr.ice.predix.io";
+    string clientId = "sensor_client";
+    string clientSecret = "I76MWuYSQ9Am99DFlMRSbcixGenRx0GOrAowx06hGMZvAb9E1gJfNIn1dwBUD1GIGu4TauVuYYF2buZur7b0BPTGlPfL2RtpRsgvRgrCeKvvCnZ8L4msd5lAawhkBpyO";
+    RestClient::Connection *oAuthConn = new RestClient::Connection(url);
+    RestClient::HeaderFields headers;
+    string preBase64Creds = clientId + ":" + clientSecret;
+    string postBase64Creds; 
+    Base64::Encode(preBase64Creds,&postBase64Creds); 
+    cout << postBase64Creds << endl;
+    headers["authorization"] = "Basic " + postBase64Creds;
+    headers["content-type"] = "application/x-www-form-urlencoded";
+    string postData = "client_id=sensor_client&grant_type=client_credentials";
+    oAuthConn->SetHeaders(headers);
+    RestClient::Response r = oAuthConn->post("/oauth/token", postData);
+    auto result = json::parse(r.body);
+    token = result["access_token"];   
+    cout << token << endl;
+    conn->AppendHeader("authorization", token);    
+}
+
 RestClient::Response RestActions::postRequest(RestClient::Connection* conn, map<int, bool> data) 
 {
 	string postData = "{";
-		postData += "\"ParkingLotId\": \"ParkingLot1\",";
-        postData += "\"SensorId\": 
+		postData += "\"sensorId\": \"PI1\",";
+        postData += "\"SensorId\":"; 
 		postData += "\"Timestamp\": \"";
 		char time_buf[21];
 		time_t now;
@@ -47,61 +70,23 @@ RestClient::Response RestActions::postRequest(RestClient::Connection* conn, map<
 	    strftime(time_buf, 21, "%Y-%m-%dT%H:%S:%MZ", localtime(&now));
 		postData += time_buf;
 		postData += "\",";
-		postData += "\"ParkingSpots\":["; 
-	for (int i = 0; i < data.size(); i++)
-	{
-		postData += "{";
-		postData += "\"id\":";
-		postData += to_string(i);
-		postData += ", \"status\": ";
-		postData += data[i] ? "true" : "false";
-		postData += "}";
-		if (i + 1 != data.size())
-			postData += ",";
-	}
-	postData += "]}";
-
-	cout << postData << endl;
-
-	RestClient::Response r = conn->post("/api/processing", postData);
-	cout << r.code << endl;
+		postData += "\"spotsTaken\": ";
+        int ct = 0; 
+	for (int i = 0; i < data.size(); i++) {
+              if (data[i])
+              {
+              ct++;
+              }
+        }
+	postData += to_string(ct) + ",";
+        postData += "\"licensePlates\":[""]}";
+	cout << postData << endl;                                      
+	RestClient::Response r = conn->post("/api/ingest", postData);
+	cout << "DID POST SUCCEED" << r.code << endl;
     return r;
 }
 
 bool RestActions::receiveConfiguration(RestClient::Response response, vector<Parking>* parking_data) {
-    string raw = R"({
-  "requireconfig" : true,
-  "config" : [
-    {
-      "spotid" : 0,
-      "coordinates" :
-        {
-          "x1" : 120,
-          "y1" : 138,
-          "x2" : 425,
-          "y2" : 125,
-          "x3" : 420,
-          "y3" : 147,
-          "x4" : 526,
-          "y4" : 325
-        }
-    },
-    {
-      "spotid" : 1,
-      "coordinates" : 
-        {
-          "x1" : 120,
-          "y1" : 138,
-          "x2" : 425,
-          "y2" : 125,
-          "x3" : 420,
-          "y3" : 147,
-          "x4" : 526,
-          "y4" : 325
-        }
-    }
-  ]
-})";
     auto result = json::parse(raw);
     if (result["requireconfig"]) {
         parking_data->clear();
@@ -122,7 +107,7 @@ bool RestActions::receiveConfiguration(RestClient::Response response, vector<Par
             vector<cv::Point> points;
 
             points.push_back(cv::Point(x1, y1));
-		    points.push_back(cv::Point(x2, y2));
+auto result = json::parse(raw);		    points.push_back(cv::Point(x2, y2));
 		    points.push_back(cv::Point(x3, y3));
 		    points.push_back(cv::Point(x4, y4));
 		    space.setId(id);

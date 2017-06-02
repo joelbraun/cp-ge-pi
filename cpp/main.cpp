@@ -17,37 +17,17 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
-	if (argc != 3)
+	if (argc != 2)
 	{
-		printf("usage: DetectParking.exe <Video_Filename or Camera_Number> <ParkingData_Filename>\n\n");
-		printf("<Camera_Number> can be 0, 1, ... for attached cameras\n");
+		printf("usage: DetectParking <ParkingData_Filename>\n\n");
 		printf("<ParkingData_Filename> should be simple txt file with lines of: id x1 y1 x2 y2 x3 y3 x4 y4\n");
 		return -1;
 	}
     
         //Load configs
         ConfigLoad::parse();
-    
-	const string videoFilename = argv[1];	
-	vector<Parking>  parking_data = parse_parking_file(argv[2]);
-
-	// Open Camera or Video	File
-	//cv::VideoCapture cap;
-	//if (videoFilename == "0" || videoFilename == "1" || videoFilename == "2")
-	//{
-	//	printf("Loading Connected Camera...\n");
-	//	cap.open(stoi(videoFilename));
-	//	cv::waitKey(500);
-	//}
-	//else 
-	//{
-	//	cap.open(videoFilename);
-	//}	
-	//if (!cap.isOpened())
-	//{
-	//	cout << "Could not open: " << videoFilename << endl;
-	//	return -1;
-	//}
+    	
+	vector<Parking>  parking_data = parse_parking_file(argv[1]);
 
 	// Initiliaze variables
 	cv::Mat frame, frame_blur, frame_gray, frame_out, roi, laplacian;
@@ -57,6 +37,7 @@ int main(int argc, char** argv)
 
 	unsigned int frameCt = 0;
 	RestActions* restActions = new RestActions();
+        restActions->getOAuthToken();
 	RestClient::Connection* conn = restActions->getRestClient();
 	raspicam::RaspiCam_Cv Camera;
         Camera.set(CV_CAP_PROP_FORMAT, CV_8UC1);
@@ -73,13 +54,9 @@ int main(int argc, char** argv)
                 cv::Mat rot_mat = cv::getRotationMatrix2D(src_center, 90, 1.0);
                 cv::warpAffine(frame, frame, rot_mat, frame.size());
                 
-                string fname = "test" + to_string(frameCt) + ".jpg";
+                string fname = "output.jpg";
                 cv::imwrite(fname, frame);
                 
-                if (fork() == 0) {
-                   exec("python /home/pi/cp-ge-pi/cpp/sendimage.py");
-                   return 0;
-                }
                 cv::GaussianBlur(frame, frame_blur, blur_kernel, 3, 3);
 		if (ConfigLoad::options["DETECT_PARKING"] == "true")
 		{
@@ -96,6 +73,7 @@ int main(int argc, char** argv)
 
 			}
 			if (frameCt % atoi(ConfigLoad::options["SAMPLE_RATE"].c_str()) == 0) {
+                                system("python /home/pi/cp-ge-pi/cpp/sendimage.py");
 				RestClient::Response response = restActions->postRequest(conn, pStatus);
 				cout << "Configuration received: " << restActions->receiveConfiguration(response, &parking_data) << endl;
 			}

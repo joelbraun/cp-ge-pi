@@ -8,10 +8,12 @@ using namespace std;
 class RestActions {
 private:
     RestClient::Connection* conn;
+    string token;
 public:
     RestActions();
     RestClient::Response postRequest(RestClient::Connection* conn, map<int,bool> status);
     bool receiveConfiguration(RestClient::Response response, vector<Parking> *parking_data);
     RestClient::Connection* getRestClient();
+    void getOAuthToken();
     ~RestActions();
 };
