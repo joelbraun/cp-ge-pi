@@ -37,7 +37,8 @@ int main(int argc, char** argv)
 
 	unsigned int frameCt = 0;
 	RestActions* restActions = new RestActions();
-        restActions->getOAuthToken();
+        restActions->getProcessOAuthToken();
+        restActions->getConfigOAuthToken();
 	RestClient::Connection* conn = restActions->getRestClient();
 	raspicam::RaspiCam_Cv Camera;
         Camera.set(CV_CAP_PROP_FORMAT, CV_8UC1);
@@ -48,7 +49,7 @@ int main(int argc, char** argv)
 	// Loop through Video
 	while (true)
 	{
-                cout << Camera.grab() << endl;
+                //cout << Camera.grab() << endl;
 		Camera.retrieve(frame);
 		cv::Point2f src_center(frame.cols / 2.0F, frame.rows / 2.0F);
                 cv::Mat rot_mat = cv::getRotationMatrix2D(src_center, 90, 1.0);
